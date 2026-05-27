@@ -1,0 +1,3 @@
+requests
+exa-py
+scholarly
