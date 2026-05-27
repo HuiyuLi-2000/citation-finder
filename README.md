@@ -68,6 +68,7 @@ LLM_MODEL=your_model
 | `LLM_MODEL` | ❌ | 模型名称 |
 
 ## 使用
+本项目是一个通用Skill，供 AI Agent 参考安装和调度执行。以下为 Agent 运行时的完整流程。
 
 ### 完整流程（4 步）
 
