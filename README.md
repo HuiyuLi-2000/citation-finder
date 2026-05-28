@@ -1,55 +1,55 @@
 # Citation Finder
 
-为学术文本自动识别需要文献支撑的声明，搜索真实学术数据库，评估相关性后将引用插回原文。
+Automatically identifies claims in academic text that require literature support, searches real academic databases, evaluates relevance, and inserts citations back into the original text.
 
-> ⚠️ 永不编造论文、引用或 DOI。只返回数据库实际命中的结果。
+> ⚠️ Never fabricate papers, citations, or DOIs. Only return results that actually exist in the databases.
 
-## 特性
+## Features
 
-- **6 源搜索**：OpenAlex / Crossref / Exa / Google Scholar / 本地文件 / Zotero MCP
-- **智能声明提取**：自动切句、过滤无需引用的句子、长句截断
-- **三维评分排序**：期刊等级 (30%) + 支撑度 (30%) + 时效性 (40%)
-- **LLM 支撑度评估**：可选接入 OpenAI 兼容 API，对论文-声明匹配度打分
-- **多格式输出**：带引用标记的 Markdown + BibTeX
+- **6-Source Search**: OpenAlex / Crossref / Exa / Google Scholar / Local Files / Zotero MCP
+- **Smart Claim Extraction**: Automatic sentence splitting, filtering of sentences that don't need citations, and long-sentence truncation
+- **Three-Dimensional Scoring & Ranking**: Journal tier (30%) + Support degree (30%) + Recency (40%)
+- **LLM Support Evaluation**: Optional integration with OpenAI-compatible APIs to score paper-claim relevance
+- **Multi-Format Output**: Markdown with citation markers + BibTeX
 
-## 工作流程
+## Workflow
 
 ```
-┌─ Step 1  输入 + 声明提取
-│   读文件 → claim_extractor.py 切句+过滤 → claims.json
+┌─ Step 1  Input + Claim Extraction
+│   Read file → claim_extractor.py sentence splitting + filtering → claims.json
 │
-├─ Step 2  搜索
-│   (1) search_all.py → 4 源并行搜索 → claim_N.json
-│   (2) 本地文件搜索（可选）
-│   (3) Zotero MCP 搜索（可选）
+├─ Step 2  Search
+│   (1) search_all.py → 4-source parallel search → claim_N.json
+│   (2) Local file search (optional)
+│   (3) Zotero MCP search (optional)
 │
-├─ Step 3  支撑度评估 + 排序筛选
+├─ Step 3  Support Evaluation + Ranking & Filtering
 │   support_llm.py → support_score
 │   enrich-tiers → composite_score
-│   rank_and_filter.py → 排序 + 筛选
+│   rank_and_filter.py → ranking + filtering
 │
-└─ Step 4  输出
+└─ Step 4  Output
     format_bibtex.py → references.bib
-    agent 写 {filename}_annotated.md
+    agent writes {filename}_annotated.md
 ```
 
-## 安装
+## Installation
 
 ```bash
 pip install -r requirements.txt
 ```
 
-依赖说明：
+Dependency details:
 
-| 包 | 必需 | 说明 |
+| Package | Required | Description |
 |---|---|---|
-| `requests` | ✅ | OpenAlex / Crossref API 调用 |
-| `exa-py` | ❌ | Exa 搜索，未安装时自动跳过 |
-| `scholarly` | ❌ | Google Scholar 搜索，未安装时自动跳过 |
+| `requests` | ✅ | OpenAlex / Crossref API calls |
+| `exa-py` | ❌ | Exa search; automatically skipped if not installed |
+| `scholarly` | ❌ | Google Scholar search; automatically skipped if not installed |
 
-## 配置
+## Configuration
 
-在项目根目录创建 `.env` 文件：
+Create a `.env` file in the project root:
 
 ```env
 EXA_API_KEY=your_exa_api_key
@@ -59,26 +59,27 @@ LLM_API_ENDPOINT=your_endpoint
 LLM_MODEL=your_model
 ```
 
-| 变量 | 必需 | 说明 |
+| Variable | Required | Description |
 |---|---|---|
-| `EXA_API_KEY` | ❌ | Exa 搜索 API Key，不配置则跳过 Exa 源 |
-| `USE_LLM_SUPPORT` | ❌ | 是否启用 LLM 支撑度评估，默认 false |
-| `LLM_API_KEY` | ❌ | LLM API Key，启用 LLM 评估时必需 |
-| `LLM_API_ENDPOINT` | ❌ | OpenAI 兼容的 API 端点 |
-| `LLM_MODEL` | ❌ | 模型名称 |
+| `EXA_API_KEY` | ❌ | Exa search API key; Exa source is skipped if not configured |
+| `USE_LLM_SUPPORT` | ❌ | Whether to enable LLM support evaluation; defaults to false |
+| `LLM_API_KEY` | ❌ | LLM API key; required when LLM evaluation is enabled |
+| `LLM_API_ENDPOINT` | ❌ | OpenAI-compatible API endpoint |
+| `LLM_MODEL` | ❌ | Model name |
 
-## 使用
-本项目是一个通用Skill，供 AI Agent 参考安装和调度执行。以下为 Agent 运行时的完整流程。
+## Usage
 
-### 完整流程（4 步）
+This project is a general-purpose Skill designed for AI agents to reference, install, and orchestrate. Below is the complete runtime workflow for an agent.
 
-**Step 1 — 声明提取**
+### Complete Workflow (4 Steps)
+
+**Step 1 — Claim Extraction**
 
 ```bash
 python scripts/claim_extractor.py --input-file input.md --output claims.json
 ```
 
-**Step 2 — 搜索**
+**Step 2 — Search**
 
 ```bash
 python scripts/search_all.py \
@@ -87,26 +88,26 @@ python scripts/search_all.py \
   --output claim_1.json
 ```
 
-**Step 3 — 评分 + 排序**
+**Step 3 — Scoring + Ranking**
 
 ```bash
-# LLM 支撑度评估（可选）
-python scripts/support_llm.py --claim "声明文本" --papers claim_1.json --skip-scored
+# LLM support evaluation (optional)
+python scripts/support_llm.py --claim "claim text" --papers claim_1.json --skip-scored
 
-# 计算 composite_score
+# Compute composite_score
 python scripts/citation_finder.py enrich-tiers --input claim_1.json --email your@email.com
 
-# 排序筛选
+# Rank and filter
 python scripts/rank_and_filter.py --input claim_1.json
 ```
 
-**Step 4 — 输出**
+**Step 4 — Output**
 
 ```bash
 python scripts/format_bibtex.py --input final_papers.json --output references.bib
 ```
 
-### 单独搜索（调试用）
+### Standalone Search (for debugging)
 
 ```bash
 python scripts/citation_finder.py search \
@@ -116,23 +117,23 @@ python scripts/citation_finder.py search \
   --output results.json
 ```
 
-## 评分体系
+## Scoring System
 
-每篇论文的 `composite_score` 由三项加权：
+Each paper's `composite_score` is computed from three weighted components:
 
 ```
 composite_score = tier_score × 0.3 + support_score × 0.3 + recency_score × 0.4
 ```
 
-| 维度 | 权重 | 说明 |
+| Dimension | Weight | Description |
 |---|---|---|
-| `tier_score` | 0.3 | 期刊/会议水平（Nature/Science → CCF-A → …） |
-| `support_score` | 0.3 | 论文对声明的支撑程度（LLM 或 agent 评估，0~1） |
-| `recency_score` | 0.4 | 发表时效性 |
+| `tier_score` | 0.3 | Journal/venue level (Nature/Science → CCF-A → …) |
+| `support_score` | 0.3 | Degree to which the paper supports the claim (LLM or agent evaluation, 0–1) |
+| `recency_score` | 0.4 | Publication recency |
 
-筛选规则：每声明 ≤ 10 篇，支撑度 < 0.3 的论文 ≤ 3 篇且仅在强支撑不足时保留。
+Filtering rules: max 10 papers per claim; papers with support < 0.3 are capped at 3 and only retained when strong-support results are insufficient.
 
-## 输出示例
+## Output Example
 
 ```markdown
 Deep learning has revolutionized protein structure prediction [1,2,3].
@@ -148,36 +149,36 @@ Deep learning has revolutionized protein structure prediction [1,2,3].
     *Science*, 373(6557), 871-876. 【support=0.90 | Science | tier=1.0】
 
 [3] Radford, A., et al. (2019). Language models are unsupervised multitask learners.
-    *OpenAI*. ⚠️未验证 【support=0.20 | tier=0.3】
+    *OpenAI*. ⚠️Unverified 【support=0.20 | tier=0.3】
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 citation-finder/
-├── .env                        # API 密钥配置（不入库）
+├── .env                        # API key configuration (not tracked in repo)
 ├── requirements.txt
-├── skill.md                    # Agent 指令文档
+├── skill.md                    # Agent instruction document
 ├── data/
-│   ├── blacklist_journals.csv  # 期刊黑名单
-│   └── priority_journals.csv   # 优先期刊列表
+│   ├── blacklist_journals.csv  # Journal blacklist
+│   └── priority_journals.csv   # Priority journal list
 ├── scripts/
-│   ├── claim_extractor.py      # 声明提取
-│   ├── citation_finder.py      # 搜索入口 + merge/enrich-tiers 子命令
-│   ├── search_all.py           # 4 源并行搜索
-│   ├── exa_search.py           # Exa 搜索
-│   ├── search_google_scholar.py # Google Scholar 搜索
-│   ├── support_llm.py          # LLM 支撑度评估
-│   ├── rank_and_filter.py      # 排序筛选
-│   ├── format_bibtex.py        # BibTeX 生成
-│   ├── dedup.py                # 去重
-│   ├── tier_utils.py           # 期刊等级计算
-│   └── journal_tier_lookup.py  # 期刊等级查询 CLI
+│   ├── claim_extractor.py      # Claim extraction
+│   ├── citation_finder.py      # Search entry point + merge/enrich-tiers subcommands
+│   ├── search_all.py           # 4-source parallel search
+│   ├── exa_search.py           # Exa search
+│   ├── search_google_scholar.py # Google Scholar search
+│   ├── support_llm.py          # LLM support evaluation
+│   ├── rank_and_filter.py      # Ranking and filtering
+│   ├── format_bibtex.py        # BibTeX generation
+│   ├── dedup.py                # Deduplication
+│   ├── tier_utils.py           # Journal tier calculation
+│   └── journal_tier_lookup.py  # Journal tier lookup CLI
 └── references/
-    ├── api-reference.md        # OpenAlex / Crossref API 速查
-    ├── claim-types.md          # 声明分类与过滤规则
-    ├── data-schema.md          # 统一数据结构定义
-    ├── journal-tiers.md        # 期刊等级评分表
-    ├── search-strategy.md      # 搜索源策略详解
-    └── support-grading.md      # 支撑度评分标准
+    ├── api-reference.md        # OpenAlex / Crossref API quick reference
+    ├── claim-types.md          # Claim classification and filtering rules
+    ├── data-schema.md          # Unified data structure definition
+    ├── journal-tiers.md        # Journal tier scoring table
+    ├── search-strategy.md      # Search source strategy details
+    └── support-grading.md      # Support scoring criteria
 ```
